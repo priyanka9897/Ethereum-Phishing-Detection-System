@@ -12,7 +12,8 @@ ENV/
 Backend/.env
 
 # Large dataset files (exceeds GitHub 100MB limit)
-Backend/data/*.csv
+Backend/data/
+*.csv
 
 # Python cache & compiled files
 __pycache__/
