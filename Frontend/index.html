@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChainGuard Wallet Risk Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --ink: #12263a;
+      --muted: #5f6b7a;
+      --panel: #fffdf8;
+      --line: #d7d0c0;
+      --accent: #0f766e;
+      --danger: #b42318;
+      --warn: #b54708;
+      --safe: #027a48;
+      --shadow: 0 20px 60px rgba(18, 38, 58, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(15, 118, 110, 0.12), transparent 35%),
+        radial-gradient(circle at 88% 15%, rgba(241, 103, 69, 0.10), transparent 30%),
+        linear-gradient(180deg, #fdf8ec 0%, #f5f2e9 55%, #f7f5ef 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 18px 36px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px;
+      background: linear-gradient(125deg, #fffdf8, #f2f8f7);
+      box-shadow: var(--shadow);
+      animation: fadeIn 420ms ease-out;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.45;
+    }
+
+    .input-row {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    .settings-row {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.96rem;
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.13);
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      font-family: "Space Grotesk", sans-serif;
+      cursor: pointer;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.02); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #f8fffc;
+      min-width: 180px;
+    }
+
+    .panel-grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: var(--panel);
+      min-height: 90px;
+      animation: rise 420ms ease both;
+    }
+
+    .k-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .k-value {
+      margin-top: 8px;
+      font-size: 1.55rem;
+      font-weight: 700;
+    }
+
+    .risk-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #ede7d8;
+      overflow: hidden;
+      margin-top: 12px;
+      box-shadow: 0 2px 4px rgba(18, 38, 58, 0.08);
+    }
+
+    .risk-bar-fill {
+      height: 100%;
+      width: 0;
+      transition: width 420ms ease, background 420ms ease;
+      background: var(--safe);
+    }
+
+    .two-col {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 10px;
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.86rem;
+      color: var(--ink);
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .list li {
+      margin: 6px 0;
+      line-height: 1.35;
+    }
+
+    .grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .grid-table th,
+    .grid-table td {
+      border-bottom: 1px solid #efe7d7;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      border: 1px solid currentColor;
+    }
+
+    .status {
+      margin-top: 10px;
+      min-height: 24px;
+      font-size: 0.9rem;
+    }
+
+    /* Color-coded cards for verdicts */
+    .card.verdict-critical {
+      border: 2px solid #dc2626;
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+    }
+
+    .card.verdict-critical .k-value {
+      color: #991b1b;
+    }
+
+    .card.verdict-high {
+      border: 2px solid #f97316;
+      background: linear-gradient(135deg, #ffedd5, #fed7aa);
+    }
+
+    .card.verdict-high .k-value {
+      color: #9a3412;
+    }
+
+    .card.verdict-medium {
+      border: 2px solid #f59e0b;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+    }
+
+    .card.verdict-medium .k-value {
+      color: #92400e;
+    }
+
+    .card.verdict-safe {
+      border: 2px solid #10b981;
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    }
+
+    .card.verdict-safe .k-value {
+      color: #065f46;
+    }
+
+    /* Color legend */
+    .color-legend {
+      margin-top: 14px;
+      padding: 12px;
+      background: #fafaf8;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .fade {
+      animation: fadeIn 250ms ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 930px) {
+      .panel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .input-row, .settings-row { grid-template-columns: 1fr; }
+      .btn-primary { width: 100%; }
+      .panel-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>Wallet Risk Dashboard</h1>
+      <p class="subtitle">
+        Enter an Ethereum wallet address and run live analysis. The backend fetches on-chain activity using Etherscan and Alchemy,
+        builds a heterogeneous graph, and applies your HT-GNN model to return a phishing risk score.
+      </p>
+
+      <div class="input-row">
+        <input id="walletInput" type="text" placeholder="0x..." />
+        <button id="analyzeBtn" class="btn-primary">Analyze Wallet</button>
+      </div>
+
+      <div class="settings-row">
+        <input id="apiInput" type="text" value="http://127.0.0.1:8000" />
+        <label class="mono"><input id="refreshInput" type="checkbox" /> force refresh</label>
+      </div>
+
+      <!-- <div class="color-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #dc2626;"></div>
+          <span><strong>≥80:</strong> CRITICAL</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #f97316;"></div>
+          <span><strong>65-79:</strong> HIGH</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #f59e0b;"></div>
+          <span><strong>45-64:</strong> MEDIUM</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #10b981;"></div>
+          <span><strong>&lt;45:</strong> SAFE</span>
+        </div>
+      </div> -->
+
+      <div id="status" class="status mono"></div>
+      <div class="risk-bar"><div id="riskBarFill" class="risk-bar-fill"></div></div>
+
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button id="fetchRawBtn" class="btn-primary" style="background:#666;">Fetch Raw Data</button>
+        <button id="fetchAndSaveBtn" class="btn-primary" style="background:#999;">Save to CSV</button>
+      </div>
+    </section>
+
+    <section id="rawDataSection" class="fade" style="display:none;margin-top:18px;">
+      <article class="card">
+        <h2 class="section-title">Raw Fetched Data (Etherscan + Alchemy)</h2>
+        <div id="rawDataContent" style="max-height:400px;overflow:auto;"></div>
+      </article>
+    </section>
+
+    <section id="results" class="fade" style="display:none;">
+      <div class="panel-grid">
+        <article class="card">
+          <div class="k-label">Risk Score</div>
+          <div id="riskScore" class="k-value">-</div>
+        </article>
+        <article class="card">
+          <div class="k-label">Verdict</div>
+          <div id="verdict" class="k-value">-</div>
+        </article>
+        <article class="card">
+          <div class="k-label">Risk Tier</div>
+          <div id="tier" class="k-value">-</div>
+        </article>
+        <article class="card">
+          <div class="k-label">Confidence</div>
+          <div id="confidence" class="k-value">-</div>
+        </article>
+      </div>
+
+      <div class="two-col">
+        <article class="card">
+          <h2 class="section-title">Model Explanation</h2>
+          <p id="explanation" class="small"></p>
+          <h2 class="section-title">Evidence</h2>
+          <ul id="evidence" class="list small"></ul>
+        </article>
+
+        <article class="card">
+          <h2 class="section-title">Quick Stats</h2>
+          <table class="grid-table">
+            <tbody id="statsBody"></tbody>
+          </table>
+          <h2 class="section-title" style="margin-top:12px;">Suspicious Neighbors</h2>
+          <ul id="neighbors" class="list small"></ul>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top:10px;">
+        <h2 class="section-title">Feature Importance</h2>
+        <table class="grid-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Value</th>
+              <th>Raw</th>
+            </tr>
+          </thead>
+          <tbody id="featuresBody"></tbody>
+        </table>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const walletInput = document.getElementById('walletInput');
+    const apiInput = document.getElementById('apiInput');
+    const refreshInput = document.getElementById('refreshInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const fetchRawBtn = document.getElementById('fetchRawBtn');
+    const fetchAndSaveBtn = document.getElementById('fetchAndSaveBtn');
+    const statusEl = document.getElementById('status');
+    const resultsEl = document.getElementById('results');
+    const rawDataSection = document.getElementById('rawDataSection');
+    const rawDataContent = document.getElementById('rawDataContent');
+
+    const riskScoreEl = document.getElementById('riskScore');
+    const verdictEl = document.getElementById('verdict');
+    const tierEl = document.getElementById('tier');
+    const confidenceEl = document.getElementById('confidence');
+    const riskBarFill = document.getElementById('riskBarFill');
+
+    const explanationEl = document.getElementById('explanation');
+    const evidenceEl = document.getElementById('evidence');
+    const statsBody = document.getElementById('statsBody');
+    const neighborsEl = document.getElementById('neighbors');
+    const featuresBody = document.getElementById('featuresBody');
+
+    function colorForScore(score) {
+      // Updated verdict thresholds:
+      // ≥80: CRITICAL (deep red)
+      // 65-79: HIGH (orange-red)
+      // 45-64: MEDIUM (orange/warning) - suspicious
+      // <45: SAFE (green) - benign accounts stay safe
+      if (score >= 80) return '#dc2626';      // Critical - deep red
+      if (score >= 65) return '#f97316';      // High - orange-red
+      if (score >= 45) return '#f59e0b';      // Medium - orange
+      return '#10b981';                       // Safe - green
+    }
+
+    function verdictClassForScore(score) {
+      if (score >= 80) return 'verdict-critical';
+      if (score >= 65) return 'verdict-high';
+      if (score >= 45) return 'verdict-medium';
+      return 'verdict-safe';
+    }
+
+    function safeText(value, fallback = '-') {
+      return value === undefined || value === null || value === '' ? fallback : String(value);
+    }
+
+    function createLi(text) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      return li;
+    }
+
+    function setStatus(msg, isError = false) {
+      statusEl.textContent = msg;
+      statusEl.style.color = isError ? '#b42318' : '#12263a';
+    }
+
+    function setLoading(loading) {
+      analyzeBtn.disabled = loading;
+      analyzeBtn.textContent = loading ? 'Analyzing...' : 'Analyze Wallet';
+    }
+
+    function renderStats(data) {
+      const rows = [
+        ['Model', safeText(data.model_used)],
+        ['Fetch Time (s)', safeText(data.fetch_time_s)],
+        ['Inference Time (ms)', safeText(data.inference_time_ms)],
+        ['Hop1 Neighbors', safeText(data.num_hop1_neighbors)],
+        ['Contracts', safeText(data.num_contracts)],
+        ['Inflow TXs', safeText(data.num_inflow_txs)],
+        ['Approvals', safeText(data.num_approvals)],
+        ['Cached', String(Boolean(data.cached))]
+      ];
+      statsBody.innerHTML = '';
+      rows.forEach(([k, v]) => {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td');
+        const td2 = document.createElement('td');
+        td1.textContent = k;
+        td2.textContent = v;
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        statsBody.appendChild(tr);
+      });
+    }
+
+    function renderEvidence(evidence) {
+      evidenceEl.innerHTML = '';
+      if (!Array.isArray(evidence) || evidence.length === 0) {
+        evidenceEl.appendChild(createLi('No evidence returned.'));
+        return;
+      }
+      evidence.forEach((item) => {
+        const label = safeText(item.label, '');
+        const text = safeText(item.text, '');
+        const weight = item.attention_weight !== undefined ? ` (weight: ${item.attention_weight})` : '';
+        evidenceEl.appendChild(createLi(`${label} ${text}${weight}`.trim()));
+      });
+    }
+
+    function renderNeighbors(neighbors) {
+      neighborsEl.innerHTML = '';
+      if (!Array.isArray(neighbors) || neighbors.length === 0) {
+        neighborsEl.appendChild(createLi('No suspicious neighbors by heuristic thresholds.'));
+        return;
+      }
+      neighbors.forEach((n) => {
+        const addr = safeText(n.address);
+        const tx = safeText(n.tx_count);
+        const bal = safeText(n.balance_eth);
+        const reason = safeText(n.reason, '');
+        neighborsEl.appendChild(createLi(`${addr} | tx=${tx}, balance=${bal} ETH | ${reason}`));
+      });
+    }
+
+    function renderFeatures(features) {
+      featuresBody.innerHTML = '';
+      if (!Array.isArray(features) || features.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 3;
+        td.textContent = 'No feature importance returned.';
+        tr.appendChild(td);
+        featuresBody.appendChild(tr);
+        return;
+      }
+      features.forEach((f) => {
+        const tr = document.createElement('tr');
+        const name = document.createElement('td');
+        const val = document.createElement('td');
+        const raw = document.createElement('td');
+        name.textContent = safeText(f.name);
+        val.textContent = safeText(f.value);
+        raw.textContent = safeText(f.raw);
+        tr.appendChild(name);
+        tr.appendChild(val);
+        tr.appendChild(raw);
+        featuresBody.appendChild(tr);
+      });
+    }
+
+    async function analyzeWallet() {
+      const address = walletInput.value.trim();
+      const apiBase = apiInput.value.trim().replace(/\/$/, '');
+      const forceRefresh = refreshInput.checked;
+
+      if (!address) {
+        setStatus('Please enter a wallet address.', true);
+        return;
+      }
+      if (!apiBase) {
+        setStatus('Please provide the backend URL.', true);
+        return;
+      }
+
+      setLoading(true);
+      setStatus('Collecting data from Etherscan + Alchemy and running HT-GNN inference...');
+
+      try {
+        const response = await fetch(`${apiBase}/api/v1/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address, force_refresh: forceRefresh })
+        });
+
+        const raw = await response.text();
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseErr) {
+          throw new Error(`Invalid API response: ${raw.slice(0, 300)}`);
+        }
+
+        if (!response.ok) {
+          const detail = data && data.detail ? data.detail : JSON.stringify(data);
+          throw new Error(detail);
+        }
+
+        const score = Number(data.phishing_score || 0);
+        const confidencePct = Math.round(Number(data.confidence || 0) * 1000) / 10;
+
+        riskScoreEl.textContent = `${score}%`;
+        verdictEl.textContent = safeText(data.verdict, '-').toUpperCase();
+        tierEl.textContent = safeText(data.risk_tier, '-');
+        confidenceEl.textContent = `${confidencePct}%`;
+
+        const color = colorForScore(score);
+        const verdictClass = verdictClassForScore(score);
+
+        // Apply color to text
+        [riskScoreEl, verdictEl, tierEl, confidenceEl].forEach((el) => {
+          el.style.color = color;
+        });
+
+        // Apply color-coded card styling to verdict and tier cards
+        const cards = document.querySelectorAll('.panel-grid .card');
+        if (cards.length >= 2) {
+          // Risk Score card
+          cards[0].className = `card ${verdictClass}`;
+          // Verdict card
+          cards[1].className = `card ${verdictClass}`;
+          // Tier card
+          cards[2].className = `card ${verdictClass}`;
+        }
+
+        riskBarFill.style.width = `${Math.min(100, Math.max(0, score))}%`;
+        riskBarFill.style.background = color;
+
+        explanationEl.textContent = safeText(data.explanation, 'No explanation returned.');
+        renderEvidence(data.evidence || []);
+        renderNeighbors(data.suspicious_neighbors || []);
+        renderFeatures(data.feature_importance || []);
+        renderStats(data);
+
+        setStatus(`Analysis complete for ${safeText(data.address, address)}.`);
+        resultsEl.style.display = 'block';
+      } catch (err) {
+        setStatus(`Analysis failed: ${err.message}`, true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function fetchRawData() {
+      const address = walletInput.value.trim();
+      const apiBase = apiInput.value.trim().replace(/\/$/, '');
+
+      if (!address) {
+        setStatus('Please enter a wallet address.', true);
+        return;
+      }
+
+      fetchRawBtn.disabled = true;
+      fetchRawBtn.textContent = 'Fetching...';
+      setStatus('Fetching raw data from Etherscan + Alchemy...');
+
+      try {
+        const response = await fetch(`${apiBase}/api/v1/fetch-raw`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address })
+        });
+
+        const raw = await response.text();
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseErr) {
+          throw new Error(`Invalid API response: ${raw.slice(0, 300)}`);
+        }
+
+        if (!response.ok) {
+          const detail = data && data.detail ? data.detail : JSON.stringify(data);
+          throw new Error(detail);
+        }
+
+        const target = data.target || {};
+        const hop1 = data.hop1 || [];
+        const hop2 = data.hop2 || [];
+
+        let html = `
+          <table class="grid-table" style="width:100%;font-size:0.85rem;">
+            <tbody>
+              <tr><td><strong>Address</strong></td><td class="mono">${safeText(data.address)}</td></tr>
+              <tr><td><strong>Fetched</strong></td><td>${safeText(data.timestamp)}</td></tr>
+              <tr><td colspan="2"><strong>Target Wallet</strong></td></tr>
+              <tr><td> - Type</td><td>${target.is_contract ? 'Contract' : 'EOA'}</td></tr>
+              <tr><td> - Balance</td><td>${safeText(target.balance_eth)} ETH</td></tr>
+              <tr><td> - First Block</td><td>${safeText(target.first_block)}</td></tr>
+              <tr><td> - Transactions</td><td>${safeText(target.tx_count)}</td></tr>
+              <tr><td colspan="2"><strong>Hop-1 Neighbors: ${hop1.length}</strong></td></tr>
+        `;
+
+        hop1.slice(0, 15).forEach((node, idx) => {
+          const balance = Number(node.balance_eth || 0).toFixed(6);
+          const txCount = node.tx_count || 0;
+          html += `<tr><td> [${idx+1}]</td><td class="mono" style="font-size:0.75rem;">${node.address || 'N/A'} (bal=${balance}ETH, tx=${txCount})</td></tr>`;
+        });
+
+        html += `<tr><td colspan="2"><strong>Hop-2 Neighbors: ${hop2.length}</strong></td></tr>`;
+        if (hop2.length === 0) {
+          html += '<tr><td colspan="2">None fetched</td></tr>';
+        }
+        html += '</tbody></table>';
+
+        rawDataContent.innerHTML = html;
+        rawDataSection.style.display = 'block';
+        setStatus(`Fetched data for ${safeText(data.address)}: ${hop1.length} hop-1, ${hop2.length} hop-2 neighbors.`);
+      } catch (err) {
+        setStatus(`Fetch failed: ${err.message}`, true);
+      } finally {
+        fetchRawBtn.disabled = false;
+        fetchRawBtn.textContent = 'Fetch Raw Data';
+      }
+    }
+
+    async function saveToCSV() {
+      const address = walletInput.value.trim();
+      const apiBase = apiInput.value.trim().replace(/\/$/, '');
+
+      if (!address) {
+        setStatus('Please enter a wallet address.', true);
+        return;
+      }
+
+      fetchAndSaveBtn.disabled = true;
+      fetchAndSaveBtn.textContent = 'Saving...';
+      setStatus('Saving wallet data to CSV...');
+
+      try {
+        const response = await fetch(`${apiBase}/api/v1/fetch-and-save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            addresses: [address],
+            output_file: './data/fetched_wallet_data.csv',
+            save_raw_json: false
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || JSON.stringify(data));
+        }
+
+        setStatus(`✓ Saved ${data.rows_saved} row(s) to ${data.output_file}`);
+      } catch (err) {
+        setStatus(`Save failed: ${err.message}`, true);
+      } finally {
+        fetchAndSaveBtn.disabled = false;
+        fetchAndSaveBtn.textContent = 'Save to CSV';
+      }
+    }
+
+    analyzeBtn.addEventListener('click', analyzeWallet);
+    fetchRawBtn.addEventListener('click', fetchRawData);
+    fetchAndSaveBtn.addEventListener('click', saveToCSV);
+    walletInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        analyzeWallet();
+      }
+    });
+  </script>
+</body>
+</html>

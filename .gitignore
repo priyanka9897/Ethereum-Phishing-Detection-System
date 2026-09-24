@@ -1,0 +1,33 @@
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# Environment variables & secrets (CRITICAL - DO NOT REMOVE)
+.env
+*.env
+.env.*
+!.env.example
+Backend/.env
+
+# Large dataset files (exceeds GitHub 100MB limit)
+Backend/data/*.csv
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.bak
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor & workspace files
+.idea/
+.vscode/
+*.swp
+*.swo
