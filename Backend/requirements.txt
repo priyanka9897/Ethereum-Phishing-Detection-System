@@ -1,0 +1,24 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+httpx==0.27.0
+python-dotenv==1.0.1
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# Graph & ML
+torch==2.3.0
+torch-geometric==2.5.3
+numpy==1.26.4
+scikit-learn==1.4.2
+networkx==3.3
+
+# Async & caching
+aiohttp==3.9.5
+redis==5.0.4
+aiocache==0.12.2
+
+# Web3
+web3==6.19.0
+
+# Dashboard
+streamlit==1.35.0
